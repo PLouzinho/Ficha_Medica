@@ -1,209 +1,133 @@
-import { useState } from 'react';
-import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ficha Médica</title>
 
-export default function PaginaFormulario(){
-  // Dados pessoais
-  const [nome,setNome]=useState('');
-  const [sns,setSns]=useState('');
-  const [nascimento,setNascimento]=useState('');
-  const [telefone,setTelefone]=useState('');
-  const [morada,setMorada]=useState('');
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  // Listas dinâmicas
-  const [contactos,setContactos]=useState([{id:Date.now(), nome:'', relacao:'', telefone:''}]);
-  const [antecedentes,setAntecedentes]=useState([{id:Date.now(), condicao:'', ano:'', obs:''}]);
-  const [medicacoes,setMedicacoes]=useState([{id:Date.now(), nome:'', dose:'', obs:''}]);
+<style>
+body{font-family:Arial;margin:20px;background:#f4f4f4;}
+section{background:#fff;padding:15px;margin-bottom:15px;border-radius:10px;}
+input{width:100%;padding:8px;margin:5px 0;}
+button{padding:10px;margin:5px;cursor:pointer;}
+.row{display:flex;gap:10px;margin-bottom:5px;}
+.row input{flex:1;}
+</style>
+</head>
+<body>
 
-  const exportData = () => {
-    return {
-      nome,
-      sns,
-      nascimento,
-      telefone,
-      morada,
-      contactos,
-      antecedentes,
-      medicacoes
-    };
-  };
+<h1>Ficha Médica</h1>
 
-  const exportPDF=()=>{
-    const pdf=new jsPDF();
-    const data=exportData();
+<section>
+<h3>Dados Pessoais</h3>
+<input id="nome" placeholder="Nome completo" />
+<input id="sns" placeholder="Nº SNS" />
+<input id="nascimento" type="date" />
+<input id="telefone" placeholder="Telefone" />
+<input id="morada" placeholder="Morada" />
+</section>
 
-    let y=10;
-    pdf.text('Ficha de Dados e Medicação',10,y); y+=10;
+<section>
+<h3>Contactos de Emergência</h3>
+<div id="contactos"></div>
+<button onclick="addContacto()">+ Adicionar contacto</button>
+</section>
 
-    pdf.text(`Nome: ${data.nome}`,10,y); y+=10;
-    pdf.text(`SNS: ${data.sns}`,10,y); y+=10;
-    pdf.text(`Nascimento: ${data.nascimento}`,10,y); y+=10;
-    pdf.text(`Telefone: ${data.telefone}`,10,y); y+=10;
-    pdf.text(`Morada: ${data.morada}`,10,y); y+=15;
+<section>
+<h3>Antecedentes</h3>
+<div id="antecedentes"></div>
+<button onclick="addAntecedente()">+ Adicionar antecedente</button>
+</section>
 
-    pdf.text('Contactos:',10,y); y+=10;
-    data.contactos.forEach(c=>{
-      pdf.text(`${c.nome} - ${c.relacao} - ${c.telefone}`,10,y);
-      y+=10;
-    });
+<section>
+<h3>Medicação</h3>
+<div id="medicacao"></div>
+<button onclick="addMedicacao()">+ Adicionar medicação</button>
+</section>
 
-    y+=5;
-    pdf.text('Antecedentes:',10,y); y+=10;
-    data.antecedentes.forEach(a=>{
-      pdf.text(`${a.condicao} - ${a.ano} - ${a.obs}`,10,y);
-      y+=10;
-    });
+<section>
+<button onclick="exportPDF()">PDF</button>
+<button onclick="exportWord()">Word</button>
+<button onclick="exportExcel()">Excel</button>
+</section>
 
-    y+=5;
-    pdf.text('Medicação:',10,y); y+=10;
-    data.medicacoes.forEach(m=>{
-      pdf.text(`${m.nome} - ${m.dose} - ${m.obs}`,10,y);
-      y+=10;
-    });
-
-    pdf.save('ficha_completa.pdf');
-  };
-
-  const exportWord=()=>{
-    const data=exportData();
-
-    const texto = `Ficha de Dados e Medicação\n\nNome: ${data.nome}\nSNS: ${data.sns}\nNascimento: ${data.nascimento}\nTelefone: ${data.telefone}\nMorada: ${data.morada}\n\nContactos: ${data.contactos.map(c=>c.nome+' '+c.relacao+' '+c.telefone).join('\n')}\n\nAntecedentes: ${data.antecedentes.map(a=>a.condicao+' '+a.ano+' '+a.obs).join('\n')}\n\nMedicação: ${data.medicacoes.map(m=>m.nome+' '+m.dose+' '+m.obs).join('\n')}`;
-
-    const blob=new Blob([texto],{type:'application/msword'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='ficha_completa.doc';
-    a.click();
-  };
-
-  const exportExcel=()=>{
-    const data=exportData();
-
-    const rows=[
-      ['Campo','Valor'],
-      ['Nome',data.nome],
-      ['SNS',data.sns],
-      ['Nascimento',data.nascimento],
-      ['Telefone',data.telefone],
-      ['Morada',data.morada],
-      [],
-      ['Contactos'],
-      ...data.contactos.map(c=>[c.nome,c.relacao,c.telefone]),
-      [],
-      ['Antecedentes'],
-      ...data.antecedentes.map(a=>[a.condicao,a.ano,a.obs]),
-      [],
-      ['Medicação'],
-      ...data.medicacoes.map(m=>[m.nome,m.dose,m.obs])
-    ];
-
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'Ficha');
-    XLSX.writeFile(wb,'ficha_completa.xlsx');
-  };
-
-  return (
-    <div className='p-8 font-sans max-w-5xl mx-auto space-y-8'>
-      <h1 className='text-3xl font-bold'>Ficha de Dados e Medicação</h1>
-
-      <form className='space-y-8'>
-        <section className='grid md:grid-cols-4 gap-4 border rounded-2xl p-6'>
-          <h2 className='md:col-span-4 text-xl font-semibold'>Dados Pessoais</h2>
-
-          <input className='border p-3 rounded-xl md:col-span-3' value={nome} onChange={e=>setNome(e.target.value)} placeholder='Nome completo'/>
-          <input className='border p-3 rounded-xl' value={sns} onChange={e=>setSns(e.target.value)} placeholder='Nº SNS'/>
-
-          <input type='date' className='border p-3 rounded-xl' value={nascimento} onChange={e=>setNascimento(e.target.value)}/>
-          <input className='border p-3 rounded-xl' value={telefone} onChange={e=>setTelefone(e.target.value)} placeholder='Telefone'/>
-
-          <textarea className='border p-3 rounded-xl md:col-span-4' value={morada} onChange={e=>setMorada(e.target.value)} placeholder='Morada'/>
-        </section>
-
-        <section className='border rounded-2xl p-6 space-y-4'>
-          <h2 className='text-xl font-semibold'>Contactos de Emergência</h2>
-
-          {contactos.map((c,i)=>(
-            <div key={c.id} className='grid md:grid-cols-3 gap-4 border p-4 rounded-xl'>
-              <input className='border p-3 rounded-xl' placeholder='Nome'
-                value={c.nome}
-                onChange={e=>{
-                  const copy=[...contactos]; copy[i].nome=e.target.value; setContactos(copy);
-                }}/>
-              <input className='border p-3 rounded-xl' placeholder='Relação'
-                value={c.relacao}
-                onChange={e=>{
-                  const copy=[...contactos]; copy[i].relacao=e.target.value; setContactos(copy);
-                }}/>
-              <input className='border p-3 rounded-xl' placeholder='Telefone'
-                value={c.telefone}
-                onChange={e=>{
-                  const copy=[...contactos]; copy[i].telefone=e.target.value; setContactos(copy);
-                }}/>
-            </div>
-          ))}
-
-          <button type='button' onClick={()=>setContactos([...contactos,{id:Date.now(),nome:'',relacao:'',telefone:''}])} className='px-4 py-2 border rounded-xl'>+ Adicionar contacto</button>
-        </section>
-
-        <section className='border rounded-2xl p-6 space-y-4'>
-          <h2 className='text-xl font-semibold'>Antecedentes Pessoais</h2>
-
-          {antecedentes.map((a,i)=>(
-            <div key={a.id} className='grid md:grid-cols-3 gap-4'>
-              <input className='border p-3 rounded-xl' placeholder='Condição'
-                value={a.condicao}
-                onChange={e=>{
-                  const copy=[...antecedentes]; copy[i].condicao=e.target.value; setAntecedentes(copy);
-                }}/>
-              <input className='border p-3 rounded-xl' placeholder='Ano'
-                value={a.ano}
-                onChange={e=>{
-                  const copy=[...antecedentes]; copy[i].ano=e.target.value; setAntecedentes(copy);
-                }}/>
-              <input className='border p-3 rounded-xl' placeholder='Observações'
-                value={a.obs}
-                onChange={e=>{
-                  const copy=[...antecedentes]; copy[i].obs=e.target.value; setAntecedentes(copy);
-                }}/>
-            </div>
-          ))}
-
-          <button type='button' onClick={()=>setAntecedentes([...antecedentes,{id:Date.now(),condicao:'',ano:'',obs:''}])} className='px-4 py-2 border rounded-xl'>+ Adicionar antecedente</button>
-        </section>
-
-        <section className='border rounded-2xl p-6 space-y-4'>
-          <h2 className='text-xl font-semibold'>Medicação</h2>
-
-          {medicacoes.map((m,i)=>(
-            <div key={m.id} className='grid md:grid-cols-3 gap-4'>
-              <input className='border p-3 rounded-xl' placeholder='Medicamento'
-                value={m.nome}
-                onChange={e=>{
-                  const copy=[...medicacoes]; copy[i].nome=e.target.value; setMedicacoes(copy);
-                }}/>
-              <input className='border p-3 rounded-xl' placeholder='Dose'
-                value={m.dose}
-                onChange={e=>{
-                  const copy=[...medicacoes]; copy[i].dose=e.target.value; setMedicacoes(copy);
-                }}/>
-              <input className='border p-3 rounded-xl' placeholder='Observações'
-                value={m.obs}
-                onChange={e=>{
-                  const copy=[...medicacoes]; copy[i].obs=e.target.value; setMedicacoes(copy);
-                }}/>
-            </div>
-          ))}
-
-          <button type='button' onClick={()=>setMedicacoes([...medicacoes,{id:Date.now(),nome:'',dose:'',obs:''}])} className='px-4 py-2 border rounded-xl'>+ Adicionar medicação</button>
-        </section>
-
-        <div className='flex flex-wrap gap-3'>
-          <button type='button' onClick={exportPDF} className='bg-black text-white px-6 py-3 rounded-2xl'>Guardar PDF</button>
-          <button type='button' onClick={exportWord} className='bg-blue-600 text-white px-6 py-3 rounded-2xl'>Guardar Word</button>
-          <button type='button' onClick={exportExcel} className='bg-green-600 text-white px-6 py-3 rounded-2xl'>Guardar Excel</button>
-        </div>
-      </form>
-    </div>
-  );
+<script>
+function addContacto(){
+const div=document.createElement('div');div.className='row';
+div.innerHTML=`<input placeholder='Nome'><input placeholder='Relação'><input placeholder='Telefone'>`;
+document.getElementById('contactos').appendChild(div);
 }
+
+function addAntecedente(){
+const div=document.createElement('div');div.className='row';
+div.innerHTML=`<input placeholder='Condição'><input placeholder='Ano'><input placeholder='Obs'>`;
+document.getElementById('antecedentes').appendChild(div);
+}
+
+function addMedicacao(){
+const div=document.createElement('div');div.className='row';
+div.innerHTML=`<input placeholder='Medicamento'><input placeholder='Dose'><input placeholder='Obs'>`;
+document.getElementById('medicacao').appendChild(div);
+}
+
+function getData(){
+const readRows=(id)=>[...document.querySelectorAll('#'+id+' .row')].map(r=>
+[...r.querySelectorAll('input')].map(i=>i.value)
+);
+return{
+nome:document.getElementById('nome').value,
+sns:document.getElementById('sns').value,
+nascimento:document.getElementById('nascimento').value,
+telefone:document.getElementById('telefone').value,
+morada:document.getElementById('morada').value,
+contactos:readRows('contactos'),
+antecedentes:readRows('antecedentes'),
+medicacao:readRows('medicacao')
+};
+}
+
+function exportPDF(){
+const { jsPDF } = window.jspdf;
+const pdf=new jsPDF();
+const d=getData();
+let y=10;
+pdf.text('Ficha Médica',10,y);y+=10;
+pdf.text('Nome: '+d.nome,10,y);y+=10;
+pdf.text('SNS: '+d.sns,10,y);y+=10;
+pdf.text('Nascimento: '+d.nascimento,10,y);y+=10;
+pdf.text('Telefone: '+d.telefone,10,y);y+=10;
+pdf.text('Morada: '+d.morada,10,y);
+pdf.save('ficha.pdf');
+}
+
+function exportWord(){
+const d=getData();
+const text=`Ficha Médica\n\nNome:${d.nome}\nSNS:${d.sns}\nNascimento:${d.nascimento}\nTelefone:${d.telefone}\nMorada:${d.morada}`;
+const blob=new Blob([text],{type:'application/msword'});
+const a=document.createElement('a');
+a.href=URL.createObjectURL(blob);
+a.download='ficha.doc';
+a.click();
+}
+
+function exportExcel(){
+const d=getData();
+const ws=XLSX.utils.aoa_to_sheet([
+['Campo','Valor'],
+['Nome',d.nome],
+['SNS',d.sns],
+['Nascimento',d.nascimento],
+['Telefone',d.telefone],
+['Morada',d.morada]
+]);
+const wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'Ficha');
+XLSX.writeFile(wb,'ficha.xlsx');
+}
+</script>
+
+</body>
+</html>
