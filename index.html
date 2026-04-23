@@ -126,8 +126,6 @@ pre{
 <!-- EXPORT -->
 <div class="card">
 <button class="pdf" onclick="pdf()">PDF</button>
-<button class="word" onclick="word()">Word</button>
-<button class="excel" onclick="excel()">Excel</button>
 </div>
 
 </div>
@@ -290,40 +288,6 @@ function pdf(){
   p.save("ficha.pdf");
 }
 
-/* WORD */
-function word(){
-  const d = get();
-  const t = `Ficha Médica
-
-Nome: ${d.nome}
-SNS: ${d.sns}
-Nascimento: ${d.nascimento}
-Telefone: ${d.telefone}
-Morada: ${d.morada}`;
-
-  const b = new Blob([t],{type:"application/msword"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(b);
-  a.download = "ficha.doc";
-  a.click();
-}
-
-/* EXCEL */
-function excel(){
-  const d = get();
-
-  const ws = XLSX.utils.aoa_to_sheet([
-    ["Nome",d.nome],
-    ["SNS",d.sns],
-    ["Nascimento",d.nascimento],
-    ["Telefone",d.telefone],
-    ["Morada",d.morada]
-  ]);
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Ficha");
-  XLSX.writeFile(wb,"ficha.xlsx");
-}
 
 </script>
 
