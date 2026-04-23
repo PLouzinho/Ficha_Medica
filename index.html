@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ficha Médica</title>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#eef2f7;
+  margin:0;
+}
+
+.container{
+  max-width:900px;
+  margin:20px auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+
+h1{text-align:center;}
+
+input,textarea{
+  width:100%;
+  padding:8px;
+  margin:5px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+}
+
+.row input{flex:1;}
+
+button{
+  padding:10px;
+  margin-top:8px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.add{background:#ddd;}
+.pdf{background:black;color:white;}
+.word{background:#2563eb;color:white;}
+.excel{background:#16a34a;color:white;}
+
+img{
+  max-width:120px;
+  margin-top:10px;
+}
+
+pre{
+  background:#f8f8f8;
+  padding:10px;
+  border-radius:8px;
+  white-space:pre-wrap;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Ficha Médica</h1>
+
+<!-- FOTO -->
+<div class="card">
+<h3>Foto</h3>
+<input type="file" accept="image/*" onchange="loadPhoto(event)">
+<img id="photoPreview">
+</div>
+
+<!-- DADOS -->
+<div class="card">
+<h3>Dados Pessoais</h3>
+<input id="nome" placeholder="Nome completo">
+<input id="sns" placeholder="Nº SNS">
+<input id="nascimento" type="date">
+<input id="telefone" placeholder="Telefone">
+<textarea id="morada" placeholder="Morada"></textarea>
+</div>
+
+<!-- CONTACTOS -->
+<div class="card">
+<h3>Contactos de Emergência</h3>
+<div id="contactos"></div>
+<button class="add" onclick="add('contactos')">+ Adicionar</button>
+</div>
+
+<!-- ANTECEDENTES -->
+<div class="card">
+<h3>Antecedentes</h3>
+<div id="antecedentes"></div>
+<button class="add" onclick="add('antecedentes')">+ Adicionar</button>
+</div>
+
+<!-- MEDICAÇÃO -->
+<div class="card">
+<h3>Medicação</h3>
+<div id="medicacao"></div>
+<button class="add" onclick="add('medicacao')">+ Adicionar</button>
+</div>
+
+<!-- PREVIEW -->
+<div class="card">
+<h3>Pré-visualização</h3>
+<pre id="preview"></pre>
+</div>
+
+<!-- EXPORT -->
+<div class="card">
+<button class="pdf" onclick="pdf()">PDF</button>
+</div>
+
+</div>
+
+<script>
+
+let foto = "";
+
+/* FOTO */
+function loadPhoto(e){
+  const r = new FileReader();
+  r.onload = () => {
+    foto = r.result;
+    document.getElementById("photoPreview").src = foto;
+  };
+  r.readAsDataURL(e.target.files[0]);
+}
+
+/* ADICIONAR CAMPOS */
+function add(id){
+  const div = document.createElement("div");
+  div.className = "row";
+
+  if(id === "contactos"){
+    div.innerHTML = `
+      <input placeholder="Nome" class="c1">
+      <input placeholder="Relação" class="c2">
+      <input placeholder="Telefone" class="c3">
+    `;
+  }
+
+  if(id === "antecedentes"){
+    div.innerHTML = `
+      <input placeholder="Condição" class="a1">
+      <input placeholder="Ano" class="a2">
+      <input placeholder="Obs" class="a3">
+    `;
+  }
+
+  if(id === "medicacao"){
+    div.innerHTML = `
+      <input placeholder="Medicamento" class="m1">
+      <input placeholder="Dose" class="m2">
+      <input placeholder="Obs" class="m3">
+    `;
+  }
+
+  document.getElementById(id).appendChild(div);
+}
+
+/* LER DADOS */
+function get(){
+
+  const read = (id, fn) =>
+    [...document.querySelectorAll("#"+id+" .row")].map(fn);
+
+  return {
+    nome: nome.value,
+    sns: sns.value,
+    nascimento: nascimento.value,
+    telefone: telefone.value,
+    morada: morada.value,
+
+    contactos: read("contactos", r => [
+      r.querySelector(".c1").value,
+      r.querySelector(".c2").value,
+      r.querySelector(".c3").value
+    ]),
+
+    antecedentes: read("antecedentes", r => [
+      r.querySelector(".a1").value,
+      r.querySelector(".a2").value,
+      r.querySelector(".a3").value
+    ]),
+
+    medicacao: read("medicacao", r => [
+      r.querySelector(".m1").value,
+      r.querySelector(".m2").value,
+      r.querySelector(".m3").value
+    ])
+  };
+}
+
+/* PREVIEW */
+function preview(){
+  const d = get();
+
+  document.getElementById("preview").textContent =
+`FICHA MÉDICA
+
+Nome: ${d.nome}
+SNS: ${d.sns}
+Nascimento: ${d.nascimento}
+Telefone: ${d.telefone}
+Morada: ${d.morada}
+
+CONTACTOS DE EMERGÊNCIA
+${d.contactos.map(x=>x.join(" | ")).join("\n") || "Sem contactos"}
+
+ANTECEDENTES
+${d.antecedentes.map(x=>x.join(" | ")).join("\n") || "Sem antecedentes"}
+
+MEDICAÇÃO
+${d.medicacao.map(x=>x.join(" | ")).join("\n") || "Sem medicação"}
+`;
+}
+
+setInterval(preview, 500);
+
+/* PDF */
+function pdf(){
+  const { jsPDF } = window.jspdf;
+  const d = get();
+  const p = new jsPDF();
+
+  let y = 12;
+
+  p.setFillColor(25,55,120);
+  p.rect(0,0,210,22,'F');
+  p.setTextColor(255,255,255);
+  p.text("FICHA CLÍNICA DO PACIENTE",10,14);
+  p.setTextColor(0,0,0);
+
+  if(foto) p.addImage(foto,"JPEG",160,28,35,35);
+
+  y = 35;
+
+  function line(t,v){
+    p.text(t + ": " + (v||"-"),10,y);
+    y += 7;
+  }
+
+  line("Nome",d.nome);
+  line("SNS",d.sns);
+  line("Nascimento",d.nascimento);
+  line("Telefone",d.telefone);
+  line("Morada",d.morada);
+
+  function section(title,data){
+    y+=5;
+    p.text(title,10,y);
+    y+=6;
+
+    if(!data.length){
+      p.text("Sem registos",10,y);
+      y+=6;
+      return;
+    }
+
+    data.forEach(r=>{
+      p.text("• " + r.join(" | "),10,y);
+      y+=6;
+    });
+  }
+
+  section("CONTACTOS DE EMERGÊNCIA",d.contactos);
+  section("ANTECEDENTES",d.antecedentes);
+  section("MEDICAÇÃO",d.medicacao);
+
+  p.save("ficha.pdf");
+}
+
+
+</script>
+
+</body>
+</html>
