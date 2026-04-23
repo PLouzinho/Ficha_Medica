@@ -1,0 +1,80 @@
+function pdf(){
+  const { jsPDF } = window.jspdf;
+  const d = get();
+  const p = new jsPDF();
+
+  let y = 10;
+
+  // Título
+  p.setFontSize(16);
+  p.text("FICHA MÉDICA", 10, y);
+  y += 10;
+
+  // Foto
+  if(foto){
+    p.addImage(foto, "JPEG", 150, 10, 40, 40);
+  }
+
+  // Dados pessoais
+  p.setFontSize(12);
+  p.text("DADOS PESSOAIS", 10, y);
+  y += 8;
+
+  p.setFontSize(10);
+  p.text("Nome: " + d.nome, 10, y); y += 6;
+  p.text("SNS: " + d.sns, 10, y); y += 6;
+  p.text("Nascimento: " + d.nascimento, 10, y); y += 6;
+  p.text("Telefone: " + d.telefone, 10, y); y += 6;
+  p.text("Morada: " + d.morada, 10, y); y += 10;
+
+  // CONTACTOS DE EMERGÊNCIA
+  p.setFontSize(12);
+  p.text("CONTACTOS DE EMERGÊNCIA", 10, y);
+  y += 8;
+
+  if(d.contactos.length === 0){
+    p.text("Sem contactos", 10, y);
+    y += 6;
+  } else {
+    d.contactos.forEach(c => {
+      p.text("• " + c.join(" | "), 10, y);
+      y += 6;
+    });
+  }
+
+  y += 4;
+
+  // ANTECEDENTES
+  p.setFontSize(12);
+  p.text("ANTECEDENTES", 10, y);
+  y += 8;
+
+  if(d.antecedentes.length === 0){
+    p.text("Sem antecedentes", 10, y);
+    y += 6;
+  } else {
+    d.antecedentes.forEach(a => {
+      p.text("• " + a.join(" | "), 10, y);
+      y += 6;
+    });
+  }
+
+  y += 4;
+
+  // MEDICAÇÃO
+  p.setFontSize(12);
+  p.text("MEDICAÇÃO", 10, y);
+  y += 8;
+
+  if(d.medicacao.length === 0){
+    p.text("Sem medicação", 10, y);
+    y += 6;
+  } else {
+    d.medicacao.forEach(m => {
+      p.text("• " + m.join(" | "), 10, y);
+      y += 6;
+    });
+  }
+
+  p.save("ficha_hospital.pdf");
+}
